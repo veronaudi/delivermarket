@@ -9,6 +9,7 @@ import {
   Box,
   CircularProgress
 } from '@mui/material';
+import { styled } from '@mui/material/styles';
 import HomePage from './pages/HomePage';
 import MarketplacePage from './pages/MarketplacePage';
 import InventoryPage from './pages/InventoryPage';
@@ -16,8 +17,38 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import authService from './services/auth';
-import TransactionsPage from './pages/TransactionsPage';
-import FinancePage from './pages/FinancePage';
+
+// Цветовая палитра
+const colors = {
+  navy: '#214156',      // Темно-синий
+  palePink: '#FEE1E6',   // Бледно-розовый
+  azalea: '#FFC0A4',     // Персиковый
+  skyBlue: '#CB9CE6',    // Голубой
+  beige: '#F5EEEB',       // Бежевый
+};
+
+const StyledAppBar = styled(AppBar)({
+  backgroundColor: colors.navy,
+  boxShadow: `0 4px 12px ${colors.navy}40`,
+});
+
+const NavButton = styled(Button)({
+  color: colors.beige,
+  margin: '0 4px',
+  '&:hover': {
+    backgroundColor: colors.skyBlue,
+    color: colors.navy,
+  },
+});
+
+const Logo = styled(Typography)({
+  fontWeight: 700,
+  fontSize: '1.5rem',
+  background: `linear-gradient(135deg, ${colors.palePink} 0%, ${colors.azalea} 100%)`,
+  WebkitBackgroundClip: 'text',
+  WebkitTextFillColor: 'transparent',
+  flexGrow: 1,
+});
 
 function App() {
   const [user, setUser] = useState(null);
@@ -27,11 +58,11 @@ function App() {
   useEffect(() => {
     const currentUser = authService.getCurrentUser();
     setUser(currentUser);
-    
+
     if (currentUser) {
       fetchBalance();
     }
-    
+
     setLoading(false);
   }, []);
 
@@ -54,65 +85,65 @@ function App() {
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
-        <CircularProgress />
+        <CircularProgress sx={{ color: colors.navy }} />
       </Box>
     );
   }
 
   return (
     <Router>
-      <AppBar position="static">
+      <StyledAppBar position="static">
         <Toolbar>
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            CS2 Marketplace
-          </Typography>
-          
-          <Button color="inherit" component={Link} to="/">Home</Button>
-          <Button color="inherit" component={Link} to="/marketplace">Marketplace</Button>
-          
+          <Logo variant="h6">
+            Cookcat Доставка
+          </Logo>
+
+          <NavButton component={Link} to="/">
+            Главная
+          </NavButton>
+
+          <NavButton component={Link} to="/marketplace">
+            Меню
+          </NavButton>
+
           {user ? (
             <>
-              <Button color="inherit" component={Link} to="/inventory">Inventory</Button>
-              <Button color="inherit" component={Link} to="/transactions">Transactions</Button>
-              <Button color="inherit" component={Link} to="/finance">Finance</Button>
-              <Typography variant="body2" sx={{ mx: 2 }}>
-                Welcome, {user.username}!
+              <NavButton component={Link} to="/inventory">
+                Корзина
+              </NavButton>
+              <Typography variant="body2" sx={{ color: colors.palePink, mx: 2 }}>
+                {user.username}!
               </Typography>
-              <Button color="inherit" onClick={handleLogout}>Logout</Button>
+              <NavButton onClick={handleLogout}>
+                Выйти
+              </NavButton>
             </>
           ) : (
             <>
-              <Button color="inherit" component={Link} to="/login">Login</Button>
-              <Button color="inherit" component={Link} to="/register">Register</Button>
+              <NavButton component={Link} to="/login">
+                Войти
+              </NavButton>
+              <NavButton component={Link} to="/register">
+                Регистрация
+              </NavButton>
             </>
           )}
         </Toolbar>
-      </AppBar>
-      
+      </StyledAppBar>
+
       <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/marketplace" element={<MarketplacePage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
-          <Route path="/finance" element={
-            <ProtectedRoute>
-              <FinancePage />
-            </ProtectedRoute>
-          } />
-          
+
           <Route path="/inventory" element={
             <ProtectedRoute>
               <InventoryPage />
             </ProtectedRoute>
           } />
 
-          <Route path="/transactions" element={
-            <ProtectedRoute>
-              <TransactionsPage />
-            </ProtectedRoute>
-          } />
-          
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Container>

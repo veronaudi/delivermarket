@@ -25,8 +25,4 @@ urlpatterns = [
     
     path('marketplace/buy/<int:pk>/', views.MarketplaceViewSet.as_view({'post': 'buy'}), name='marketplace-buy'),
     path('market/sell/<int:inventory_id>/', views.sell_skin, name='sell-skin'),
-    path('finance/deposit/', FinanceViewSet.as_view({'post': 'deposit'}), name='deposit'),
-    path('api/finance/deposit/', FinanceViewSet.as_view({'post': 'deposit'}), name='deposit-api'),
-    path('finance/withdraw/', FinanceViewSet.as_view({'post': 'withdraw'}), name='withdraw'),
-    path('api/finance/withdraw/', FinanceViewSet.as_view({'post': 'withdraw'}), name='withdraw-api'),
 ]

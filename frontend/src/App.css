@@ -1,38 +1,128 @@
-.App {
-  text-align: center;
+/* Общие стили */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+body {
+  font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
+/* Цветовая палитра */
+:root {
+  --navy: #214156;
+  --pale-pink: #FEE1E6;
+  --azalea: #FFC0A4;
+  --sky-blue: #CB9CE6;
+  --beige: #F5EEEB;
 }
 
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
-}
-
-.App-link {
-  color: #61dafb;
-}
-
-@keyframes App-logo-spin {
+/* Анимации */
+@keyframes fadeIn {
   from {
-    transform: rotate(0deg);
+    opacity: 0;
+    transform: translateY(20px);
   }
   to {
-    transform: rotate(360deg);
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.5s ease-out;
+}
+
+/* Стили для карточек блюд */
+.food-card {
+  transition: all 0.3s ease;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(33, 65, 86, 0.1);
+}
+
+.food-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(33, 65, 86, 0.15);
+}
+
+.food-card img {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+}
+
+/* Кнопки */
+.order-button {
+  background: linear-gradient(135deg, var(--navy) 0%, var(--sky-blue) 100%);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 30px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.order-button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(33, 65, 86, 0.3);
+}
+
+/* Категории меню */
+.category-chip {
+  background-color: var(--beige);
+  color: var(--navy);
+  padding: 8px 16px;
+  border-radius: 30px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+}
+
+.category-chip:hover,
+.category-chip.active {
+  background-color: var(--pale-pink);
+  border-color: var(--azalea);
+}
+
+/* Цены */
+.price-tag {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--navy);
+}
+
+.price-tag span {
+  font-size: 0.9rem;
+  color: var(--sky-blue);
+  margin-left: 4px;
+}
+
+/* Стили для корзины */
+.cart-item {
+  background-color: white;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+  border-left: 4px solid var(--azalea);
+}
+
+/* Адаптивность */
+@media (max-width: 600px) {
+  .food-card img {
+    height: 150px;
+  }
+  
+  .category-chip {
+    padding: 6px 12px;
+    font-size: 0.8rem;
   }
 }
