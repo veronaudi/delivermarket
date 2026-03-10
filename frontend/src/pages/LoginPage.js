@@ -47,7 +47,7 @@ function LoginPage() {
     <Container maxWidth="sm">
       <Box sx={{ mt: 8, mb: 4 }}>
         <Typography variant="h4" align="center" gutterBottom>
-          Login to CS2 Marketplace
+          Вход на сайт
         </Typography>
         
         <Paper elevation={3} sx={{ p: 4 }}>
@@ -89,13 +89,13 @@ function LoginPage() {
               sx={{ mt: 3, mb: 2 }}
               disabled={loading}
             >
-              {loading ? <CircularProgress size={24} /> : 'Login'}
+              {loading ? <CircularProgress size={24} /> : 'К заказу!'}
             </Button>
             
             <Typography align="center">
-              Don't have an account?{' '}
+              Вы у нас в первый раз?{' '}
               <Link to="/register" style={{ textDecoration: 'none' }}>
-                Register here
+                Зарегистрируйтесь!
               </Link>
             </Typography>
           </form>

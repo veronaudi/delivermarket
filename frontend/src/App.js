@@ -112,7 +112,7 @@ function App() {
                 Корзина
               </NavButton>
               <Typography variant="body2" sx={{ color: colors.palePink, mx: 2 }}>
-                {user.username}!
+                Привет, {user.username}!
               </Typography>
               <NavButton onClick={handleLogout}>
                 Выйти

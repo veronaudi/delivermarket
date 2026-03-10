@@ -11,275 +11,535 @@ import {
   CircularProgress,
   Alert,
   TextField,
-  InputAdornment,
   Chip,
   Dialog,
   DialogTitle,
   DialogContent,
-  DialogActions
+  DialogActions,
+  IconButton,
+  Divider
 } from '@mui/material';
-import api from '../services/api';
+import {
+  Delete as DeleteIcon,
+  Add as AddIcon,
+  Remove as RemoveIcon,
+  ShoppingBag as ShoppingBagIcon
+} from '@mui/icons-material';
+import { styled } from '@mui/material/styles';
+
+// Цветовая палитра
+const colors = {
+  navy: '#214156',
+  palePink: '#FEE1E6',
+  azalea: '#FFC0A4',
+  skyBlue: '#CB9CE6',
+  beige: '#F5EEEB',
+};
+
+const StyledCard = styled(Card)({
+  height: '100%',
+  display: 'flex',
+  flexDirection: 'column',
+  transition: 'transform 0.3s',
+  borderRadius: '16px',
+  '&:hover': {
+    transform: 'translateY(-4px)',
+    boxShadow: `0 8px 24px ${colors.navy}40`,
+  },
+});
+
+const QuantityButton = styled(IconButton)({
+  backgroundColor: colors.beige,
+  '&:hover': {
+    backgroundColor: colors.palePink,
+  },
+});
 
 function InventoryPage() {
-  const [inventory, setInventory] = useState([]);
+  const [cartItems, setCartItems] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [balance, setBalance] = useState(0);
-  const [salePrices, setSalePrices] = useState({}); // {itemId: price}
-  const [sellDialogOpen, setSellDialogOpen] = useState(false);
+  const [removeDialogOpen, setRemoveDialogOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
+  const [orderDialogOpen, setOrderDialogOpen] = useState(false);
+  const [deliveryAddress, setDeliveryAddress] = useState('');
+  const [deliveryTime, setDeliveryTime] = useState('');
+  const [phone, setPhone] = useState('');
 
+  // Начальные данные для корзины
+  const initialCartItems = [
+    {
+      id: 1,
+      name: 'Креветка в чили соусе',
+      price: 650,
+      quantity: 1,
+      category: 'Основные блюда',
+      image: '/images/shrimp.jpg'
+    },
+    {
+      id: 2,
+      name: 'Картошка по-деревенски',
+      price: 250,
+      quantity: 2,
+      category: 'Закуски',
+      image: '/images/potatoes.jpg'
+    },
+    {
+      id: 3,
+      name: 'Чизкейк Сан Себастьян',
+      price: 390,
+      quantity: 1,
+      category: 'Десерты',
+      image: '/images/cheesecake.jpg'
+    }
+  ];
+
+  // Загружаем корзину из localStorage при запуске
   useEffect(() => {
-    fetchInventory();
-    fetchBalance();
+    loadCart();
   }, []);
 
-  const fetchInventory = async () => {
+  const loadCart = () => {
     try {
-      const response = await api.get('/inventory/');
-      setInventory(response.data);
-      
-      // Инициализируем цены для каждого предмета
-      const prices = {};
-      response.data.forEach(item => {
-        if (item.skin) {
-          // Устанавливаем среднюю цену как начальную
-          const min = parseFloat(item.skin.min_sell_price);
-          const max = parseFloat(item.skin.max_sell_price);
-          prices[item.id] = ((min + max) / 2).toFixed(2);
-        }
-      });
-      setSalePrices(prices);
+      const savedCart = localStorage.getItem('cart');
+      if (savedCart) {
+        setCartItems(JSON.parse(savedCart));
+      } else {
+        // Если в localStorage пусто, используем начальные данные
+        setCartItems(initialCartItems);
+        localStorage.setItem('cart', JSON.stringify(initialCartItems));
+      }
     } catch (err) {
-      setError('Failed to load inventory');
-      console.error(err);
+      console.error('Failed to load cart:', err);
+      // В случае ошибки используем начальные данные
+      setCartItems(initialCartItems);
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchBalance = async () => {
-    try {
-      const response = await api.get('/auth/profile/');
-      setBalance(response.data.balance);
-    } catch (err) {
-      console.error('Failed to load balance:', err);
+  // Сохраняем корзину в localStorage при изменении
+  useEffect(() => {
+    if (!loading) {
+      localStorage.setItem('cart', JSON.stringify(cartItems));
+    }
+  }, [cartItems, loading]);
+
+  // Удалить товар
+  const handleRemoveClick = (item) => {
+    setSelectedItem(item);
+    setRemoveDialogOpen(true);
+  };
+
+  const handleRemoveConfirm = () => {
+    if (!selectedItem) return;
+
+    // Фильтруем, удаляя выбранный товар
+    const updatedCart = cartItems.filter(item => item.id !== selectedItem.id);
+    setCartItems(updatedCart);
+    setRemoveDialogOpen(false);
+    setSelectedItem(null);
+  };
+
+  // Изменить количество
+  const handleQuantityChange = (item, change) => {
+    const newQuantity = item.quantity + change;
+
+    if (newQuantity <= 0) {
+      // Если количество становится 0, спрашиваем удалить ли
+      setSelectedItem(item);
+      setRemoveDialogOpen(true);
+    } else {
+      // Обновляем количество для конкретного товара
+      const updatedCart = cartItems.map(cartItem =>
+        cartItem.id === item.id
+          ? { ...cartItem, quantity: newQuantity }
+          : cartItem
+      );
+      setCartItems(updatedCart);
     }
   };
 
-  const handleSellClick = (item) => {
-    setSelectedItem(item);
-    setSellDialogOpen(true);
+  // Посчитать общую сумму
+  const calculateTotal = () => {
+    return cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   };
 
-  const handleSellConfirm = async () => {
-    if (!selectedItem) return;
+  // Оформить заказ
+  const handleOrderClick = () => {
+    setOrderDialogOpen(true);
+  };
 
-    const price = salePrices[selectedItem.id];
-    if (!price || price <= 0) {
-      alert('Please enter a valid price');
+  const handleOrderConfirm = () => {
+    if (!deliveryAddress || !phone) {
+      alert('Пожалуйста, заполните адрес доставки и телефон');
       return;
     }
 
-    try {
-      await api.post(`/inventory/${selectedItem.id}/sell/`, { price });
-      alert('Skin listed for sale!');
-      setSellDialogOpen(false);
-      // Обновляем данные
-      fetchInventory();
-    } catch (err) {
-      const errorMsg = err.response?.data?.error || 'Failed to list skin for sale';
-      alert(errorMsg);
-    }
+    alert('Спасибо за заказ! Мы свяжемся с вами для подтверждения.');
+
+    // Очищаем корзину
+    setCartItems([]);
+    localStorage.removeItem('cart');
+
+    // Закрываем диалог
+    setOrderDialogOpen(false);
+    setDeliveryAddress('');
+    setDeliveryTime('');
+    setPhone('');
   };
 
-  const handleCancelSale = async (itemId) => {
-    try {
-      await api.post(`/inventory/${itemId}/cancel_sale/`);
-      alert('Sale cancelled!');
-      fetchInventory();
-    } catch (err) {
-      alert(err.response?.data?.error || 'Failed to cancel sale');
+  // Очистить всю корзину
+  const handleClearCart = () => {
+    if (window.confirm('Очистить всю корзину?')) {
+      setCartItems([]);
+      localStorage.removeItem('cart');
     }
-  };
-
-  const handlePriceChange = (itemId, value) => {
-    setSalePrices(prev => ({
-      ...prev,
-      [itemId]: value
-    }));
   };
 
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
-        <CircularProgress />
+        <CircularProgress sx={{ color: colors.navy }} />
       </Box>
     );
   }
 
+  const total = calculateTotal();
+
   return (
-    <div>
-      <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Typography variant="h4">
-          Your Inventory
+    <Box>
+      {/* Заголовок */}
+      <Box sx={{ mb: 4, textAlign: 'center' }}>
+        <Typography
+          variant="h3"
+          gutterBottom
+          sx={{
+            color: colors.navy,
+            fontWeight: 700,
+            position: 'relative',
+            display: 'inline-block',
+            '&:after': {
+              content: '""',
+              position: 'absolute',
+              bottom: -8,
+              left: '25%',
+              width: '50%',
+              height: 4,
+              background: `linear-gradient(90deg, ${colors.palePink}, ${colors.azalea}, ${colors.skyBlue})`,
+              borderRadius: 2
+            }
+          }}
+        >
+          Ваша корзина
         </Typography>
-        <Paper sx={{ p: 2, bgcolor: 'primary.light', color: 'white' }}>
-          <Typography variant="h6">
-            Balance: ${balance}
-          </Typography>
-        </Paper>
       </Box>
 
-      {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {error}
-        </Alert>
-      )}
-
-      {inventory.length === 0 ? (
-        <Paper sx={{ p: 3 }}>
-          <Typography variant="body1">
-            Your inventory is empty. Buy some skins from the marketplace!
+      {cartItems.length === 0 ? (
+        <Paper sx={{ p: 4, textAlign: 'center', borderRadius: '16px' }}>
+          <ShoppingBagIcon sx={{ fontSize: 60, color: colors.skyBlue, mb: 2 }} />
+          <Typography variant="h5" sx={{ color: colors.navy, mb: 2 }}>
+            Корзина пуста
           </Typography>
+          <Typography variant="body1" sx={{ color: colors.navy, opacity: 0.7, mb: 3 }}>
+            Добавьте блюда из нашего меню
+          </Typography>
+          <Button
+            variant="contained"
+            href="/marketplace"
+            sx={{
+              backgroundColor: colors.navy,
+              color: 'white',
+              borderRadius: '30px',
+              padding: '10px 30px',
+              '&:hover': {
+                backgroundColor: colors.skyBlue,
+              }
+            }}
+          >
+            Перейти в меню
+          </Button>
         </Paper>
       ) : (
         <>
-          <Typography variant="h6" sx={{ mb: 2 }}>
-            {inventory.length} skins in inventory
-          </Typography>
-          
+          {/* Кнопка очистки корзины */}
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+            <Button
+              variant="outlined"
+              onClick={handleClearCart}
+              startIcon={<DeleteIcon />}
+              sx={{
+                borderColor: colors.navy,
+                color: colors.navy,
+                borderRadius: '30px',
+                '&:hover': {
+                  borderColor: colors.azalea,
+                  backgroundColor: colors.palePink,
+                }
+              }}
+            >
+              Очистить корзину
+            </Button>
+          </Box>
+
           <Grid container spacing={3}>
-            {inventory.map((item) => (
-              <Grid item xs={12} sm={6} md={4} key={item.id}>
-                <Card>
-                  {item.skin.image_url && (
-                    <CardMedia
-                      component="img"
-                      height="140"
-                      image={item.skin.image_url}
-                      alt={item.skin.name}
-                      sx={{ objectFit: 'cover' }}
-                    />
-                  )}
-                  <CardContent>
-                    <Typography variant="h6" gutterBottom>
-                      {item.skin.name}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {item.skin.weapon} | {item.skin.quality}
-                    </Typography>
-                    
-                    <Box sx={{ mt: 1, mb: 1 }}>
-                      <Typography variant="body2" color="text.secondary">
-                        Price range: ${item.skin.min_sell_price} - ${item.skin.max_sell_price}
+            {/* Список товаров */}
+            <Grid item xs={12} md={8}>
+              <Grid container spacing={2}>
+                {cartItems.map((item) => (
+                  <Grid item xs={12} key={item.id}>
+                    <StyledCard>
+                      <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' } }}>
+                        {/* Фото */}
+                        <CardMedia
+                          component="img"
+                          sx={{
+                            width: { xs: '100%', sm: 150 },
+                            height: 150,
+                            objectFit: 'cover'
+                          }}
+                          image={item.image}
+                          alt={item.name}
+                        />
+
+                        {/* Информация */}
+                        <CardContent sx={{ flex: 1 }}>
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                            <Box>
+                              <Typography variant="h5" sx={{ color: colors.navy, fontWeight: 600 }}>
+                                {item.name}
+                              </Typography>
+                              <Chip
+                                label={item.category}
+                                size="small"
+                                sx={{
+                                  backgroundColor: colors.azalea,
+                                  color: colors.navy,
+                                  mt: 0.5,
+                                  mb: 1
+                                }}
+                              />
+                            </Box>
+                            <Typography variant="h5" sx={{ color: colors.navy, fontWeight: 700 }}>
+                              {item.price * item.quantity} ₽
+                            </Typography>
+                          </Box>
+
+                          <Typography variant="body2" sx={{ color: colors.navy, opacity: 0.7, mb: 2 }}>
+                            {item.price} ₽ за порцию
+                          </Typography>
+
+                          {/* Количество - РАБОЧИЕ КНОПКИ */}
+                          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <QuantityButton
+                                size="small"
+                                onClick={() => handleQuantityChange(item, -1)}
+                              >
+                                <RemoveIcon />
+                              </QuantityButton>
+
+                              <Typography sx={{ minWidth: 30, textAlign: 'center', color: colors.navy }}>
+                                {item.quantity}
+                              </Typography>
+
+                              <QuantityButton
+                                size="small"
+                                onClick={() => handleQuantityChange(item, 1)}
+                              >
+                                <AddIcon />
+                              </QuantityButton>
+                            </Box>
+
+                            {/* Кнопка удаления - РАБОЧАЯ */}
+                            <IconButton
+                              onClick={() => handleRemoveClick(item)}
+                              sx={{ color: colors.navy }}
+                            >
+                              <DeleteIcon />
+                            </IconButton>
+                          </Box>
+                        </CardContent>
+                      </Box>
+                    </StyledCard>
+                  </Grid>
+                ))}
+              </Grid>
+            </Grid>
+
+            {/* Итого */}
+            <Grid item xs={12} md={4}>
+              <Paper sx={{ p: 3, borderRadius: '16px', position: 'sticky', top: 20 }}>
+                <Typography variant="h5" sx={{ color: colors.navy, fontWeight: 600, mb: 2 }}>
+                  Итого
+                </Typography>
+
+                <Box sx={{ mb: 2 }}>
+                  {cartItems.map((item) => (
+                    <Box key={item.id} sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                      <Typography variant="body2" sx={{ color: colors.navy }}>
+                        {item.name} x{item.quantity}
                       </Typography>
-                      <Typography variant="h6" color="primary">
-                        Value: ${item.skin.base_price}
+                      <Typography variant="body2" sx={{ color: colors.navy, fontWeight: 500 }}>
+                        {item.price * item.quantity} ₽
                       </Typography>
                     </Box>
+                  ))}
+                </Box>
 
-                    {item.is_for_sale ? (
-                      <Box sx={{ mt: 2 }}>
-                        <Chip 
-                          label={`FOR SALE: $${item.sale_price}`} 
-                          color="success" 
-                          sx={{ mb: 1, width: '100%' }}
-                        />
-                        <Button
-                          variant="outlined"
-                          color="secondary"
-                          fullWidth
-                          onClick={() => handleCancelSale(item.id)}
-                        >
-                          Cancel Sale
-                        </Button>
-                      </Box>
-                    ) : (
-                      <Box sx={{ mt: 2 }}>
-                        <TextField
-                          fullWidth
-                          size="small"
-                          label="Sale Price"
-                          type="number"
-                          value={salePrices[item.id] || ''}
-                          onChange={(e) => handlePriceChange(item.id, e.target.value)}
-                          sx={{ mb: 1 }}
-                          InputProps={{
-                            startAdornment: <InputAdornment position="start">$</InputAdornment>,
-                          }}
-                          helperText={`Min: $${item.skin.min_sell_price}, Max: $${item.skin.max_sell_price}`}
-                        />
-                        <Button
-                          variant="contained"
-                          color="secondary"
-                          fullWidth
-                          onClick={() => handleSellClick(item)}
-                          disabled={!salePrices[item.id] || salePrices[item.id] <= 0}
-                        >
-                          Sell on Marketplace
-                        </Button>
-                      </Box>
-                    )}
-                  </CardContent>
-                </Card>
-              </Grid>
-            ))}
+                <Divider sx={{ my: 2 }} />
+
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
+                  <Typography variant="h6" sx={{ color: colors.navy }}>
+                    Общая сумма:
+                  </Typography>
+                  <Typography variant="h5" sx={{ color: colors.navy, fontWeight: 700 }}>
+                    {total} ₽
+                  </Typography>
+                </Box>
+
+                <Button
+                  fullWidth
+                  variant="contained"
+                  size="large"
+                  onClick={handleOrderClick}
+                  sx={{
+                    backgroundColor: colors.navy,
+                    color: 'white',
+                    borderRadius: '30px',
+                    padding: '12px',
+                    '&:hover': {
+                      backgroundColor: colors.skyBlue,
+                    }
+                  }}
+                >
+                  Оформить заказ
+                </Button>
+              </Paper>
+            </Grid>
           </Grid>
         </>
       )}
 
-      {/* Sell Dialog */}
-      <Dialog open={sellDialogOpen} onClose={() => setSellDialogOpen(false)}>
-        <DialogTitle>List Skin for Sale</DialogTitle>
+      {/* Диалог удаления */}
+      <Dialog
+        open={removeDialogOpen}
+        onClose={() => setRemoveDialogOpen(false)}
+        PaperProps={{
+          sx: { borderRadius: '16px' }
+        }}
+      >
+        <DialogTitle sx={{ color: colors.navy }}>
+          Удалить из корзины?
+        </DialogTitle>
         <DialogContent>
-          {selectedItem && (
-            <>
-              <Typography gutterBottom>
-                List <strong>{selectedItem.skin.name}</strong> for sale?
-              </Typography>
-              <Typography variant="body2" color="text.secondary" gutterBottom>
-                {selectedItem.skin.weapon} | {selectedItem.skin.quality}
-              </Typography>
-              
-              <TextField
-                autoFocus
-                margin="dense"
-                label="Sale Price"
-                type="number"
-                fullWidth
-                value={salePrices[selectedItem.id] || ''}
-                onChange={(e) => handlePriceChange(selectedItem.id, e.target.value)}
-                InputProps={{
-                  startAdornment: <InputAdornment position="start">$</InputAdornment>,
-                }}
-                sx={{ mt: 2 }}
-              />
-              
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                Price must be between ${selectedItem.skin.min_sell_price} and ${selectedItem.skin.max_sell_price}
-              </Typography>
-              
-              {salePrices[selectedItem.id] && (
-                <Alert severity="info" sx={{ mt: 2 }}>
-                  You will receive ${salePrices[selectedItem.id]} when someone buys this skin.
-                </Alert>
-              )}
-            </>
-          )}
+          <Typography sx={{ color: colors.navy }}>
+            Вы уверены, что хотите удалить "{selectedItem?.name}" из корзины?
+          </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setSellDialogOpen(false)}>Cancel</Button>
           <Button
-            onClick={handleSellConfirm}
-            variant="contained"
-            disabled={!selectedItem || !salePrices[selectedItem.id]}
+            onClick={() => setRemoveDialogOpen(false)}
+            sx={{ color: colors.navy }}
           >
-            List for Sale
+            Отмена
+          </Button>
+          <Button
+            onClick={handleRemoveConfirm}
+            sx={{ color: colors.azalea }}
+          >
+            Удалить
           </Button>
         </DialogActions>
       </Dialog>
-    </div>
+
+      {/* Диалог оформления заказа */}
+      <Dialog
+        open={orderDialogOpen}
+        onClose={() => setOrderDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: { borderRadius: '16px' }
+        }}
+      >
+        <DialogTitle sx={{ color: colors.navy }}>
+          Оформление заказа
+        </DialogTitle>
+        <DialogContent>
+          <Box sx={{ mt: 2 }}>
+            <TextField
+              fullWidth
+              label="Адрес доставки"
+              value={deliveryAddress}
+              onChange={(e) => setDeliveryAddress(e.target.value)}
+              sx={{ mb: 2 }}
+            />
+
+            <TextField
+              fullWidth
+              label="Телефон"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="+7 (999) 123-45-67"
+              sx={{ mb: 2 }}
+            />
+
+            <TextField
+              fullWidth
+              label="Желаемое время доставки"
+              value={deliveryTime}
+              onChange={(e) => setDeliveryTime(e.target.value)}
+              placeholder="Например: 19:00"
+            />
+
+            <Box sx={{ mt: 3, p: 2, backgroundColor: colors.beige, borderRadius: '12px' }}>
+              <Typography variant="h6" sx={{ color: colors.navy, mb: 1 }}>
+                Ваш заказ:
+              </Typography>
+              {cartItems.map((item) => (
+                <Box key={item.id} sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                  <Typography variant="body2" sx={{ color: colors.navy }}>
+                    {item.name} x{item.quantity}
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: colors.navy }}>
+                    {item.price * item.quantity} ₽
+                  </Typography>
+                </Box>
+              ))}
+              <Divider sx={{ my: 2 }} />
+              <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                <Typography variant="h6" sx={{ color: colors.navy }}>
+                  Итого:
+                </Typography>
+                <Typography variant="h6" sx={{ color: colors.navy }}>
+                  {total} ₽
+                </Typography>
+              </Box>
+            </Box>
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ p: 3 }}>
+          <Button
+            onClick={() => setOrderDialogOpen(false)}
+            sx={{ color: colors.navy }}
+          >
+            Отмена
+          </Button>
+          <Button
+            onClick={handleOrderConfirm}
+            variant="contained"
+            sx={{
+              backgroundColor: colors.navy,
+              '&:hover': {
+                backgroundColor: colors.skyBlue,
+              }
+            }}
+          >
+            Подтвердить заказ
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
   );
 }
 

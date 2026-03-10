@@ -80,10 +80,7 @@ function RegisterPage() {
     <Container maxWidth="sm">
       <Box sx={{ mt: 8, mb: 4 }}>
         <Typography variant="h4" align="center" gutterBottom>
-          Create Account
-        </Typography>
-        <Typography variant="subtitle1" align="center" color="text.secondary" sx={{ mb: 3 }}>
-          Get $100 and 10 random skins upon registration!
+          Создание аккаунта
         </Typography>
         
         <Paper elevation={3} sx={{ p: 4 }}>
@@ -155,13 +152,13 @@ function RegisterPage() {
               sx={{ mt: 3, mb: 2 }}
               disabled={loading}
             >
-              {loading ? <CircularProgress size={24} /> : 'Register'}
+              {loading ? <CircularProgress size={24} /> : 'Регистрация'}
             </Button>
             
             <Typography align="center">
-              Already have an account?{' '}
+              Уже заказывали у нас?{' '}
               <Link to="/login" style={{ textDecoration: 'none' }}>
-                Login here
+                Лучше войдите в аккаунт
               </Link>
             </Typography>
           </form>
