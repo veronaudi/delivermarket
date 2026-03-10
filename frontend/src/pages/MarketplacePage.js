@@ -7,9 +7,12 @@ import {
   Typography,
   Button,
   Box,
-  Container
+  Container,
+  Snackbar,
+  Alert
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
+import AddShoppingCartIcon from '@mui/icons-material/AddShoppingCart';
 
 // Цвета как в главной странице
 const colors = {
@@ -26,14 +29,25 @@ const StyledCard = styled(Card)({
   flexDirection: 'column',
   transition: 'transform 0.3s',
   borderRadius: '16px',
+  cursor: 'pointer',
   '&:hover': {
     transform: 'translateY(-4px)',
     boxShadow: `0 8px 24px ${colors.navy}40`,
   },
   '& .MuiCardMedia-root': {
-    height: '200px !important', // фиксированная высота для всех фото
+    height: '200px !important',
     minHeight: '200px !important',
     maxHeight: '200px !important'
+  }
+});
+
+const AddButton = styled(Button)({
+  backgroundColor: colors.navy,
+  color: 'white',
+  borderRadius: '30px',
+  marginTop: '10px',
+  '&:hover': {
+    backgroundColor: colors.skyBlue,
   }
 });
 
@@ -64,7 +78,6 @@ const menuItems = [
     category: 'Основные блюда',
     image: '/images/dumplings.jpg'
   },
-
   // Закуски
   {
     id: 4,
@@ -82,7 +95,6 @@ const menuItems = [
     category: 'Закуски',
     image: '/images/octopus.jpg'
   },
-
   // Супы
   {
     id: 6,
@@ -100,7 +112,6 @@ const menuItems = [
     category: 'Супы',
     image: '/images/creamy-soup.jpg'
   },
-
   // Десерты
   {
     id: 8,
@@ -121,6 +132,46 @@ const menuItems = [
 ];
 
 function MarketplacePage() {
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+
+  const addToCart = (item) => {
+    // Получаем текущую корзину из localStorage
+    const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+
+    // Проверяем, есть ли уже такой товар в корзине
+    const existingItemIndex = cart.findIndex(cartItem => cartItem.id === item.id);
+
+    if (existingItemIndex !== -1) {
+      // Если товар уже есть, увеличиваем количество
+      cart[existingItemIndex].quantity += 1;
+    } else {
+      // Если товара нет, добавляем новый с quantity: 1
+      cart.push({
+        id: item.id,
+        name: item.name,
+        price: item.price,
+        category: item.category,
+        image: item.image,
+        quantity: 1
+      });
+    }
+
+    // Сохраняем обновленную корзину
+    localStorage.setItem('cart', JSON.stringify(cart));
+
+    // Показываем уведомление
+    setSnackbarMessage(`${item.name} добавлен в корзину`);
+    setSnackbarOpen(true);
+  };
+
+  const handleCloseSnackbar = (event, reason) => {
+    if (reason === 'clickaway') {
+      return;
+    }
+    setSnackbarOpen(false);
+  };
+
   return (
     <Container maxWidth="lg">
       <Typography
@@ -141,17 +192,17 @@ function MarketplacePage() {
           <Grid item xs={12} sm={6} md={4} key={item.id}>
             <StyledCard>
               <CardMedia
-                  component="img"
-                  height="200"
-                  image={item.image}
-                  alt={item.name}
-                  sx={{
-                    objectFit: 'cover',  // cover - обрезает, contain - масштабирует с полным показом
-                    width: '100%',
-                    height: '200px',
-                    backgroundColor: colors.beige  // фон для фото с соотношением сторон
-                  }}
-                />
+                component="img"
+                height="200"
+                image={item.image}
+                alt={item.name}
+                sx={{
+                  objectFit: 'cover',
+                  width: '100%',
+                  height: '200px',
+                  backgroundColor: colors.beige
+                }}
+              />
               <CardContent>
                 <Typography variant="h5" gutterBottom sx={{ color: colors.navy }}>
                   {item.name}
@@ -167,11 +218,45 @@ function MarketplacePage() {
                     {item.category}
                   </Typography>
                 </Box>
+                <AddButton
+                  fullWidth
+                  variant="contained"
+                  startIcon={<AddShoppingCartIcon />}
+                  onClick={(e) => {
+                    e.stopPropagation(); // Предотвращаем всплытие события
+                    addToCart(item);
+                  }}
+                  sx={{ mt: 2 }}
+                >
+                  Добавить в корзину
+                </AddButton>
               </CardContent>
             </StyledCard>
           </Grid>
         ))}
       </Grid>
+
+      {/* Уведомление о добавлении в корзину */}
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={2000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert
+          onClose={handleCloseSnackbar}
+          severity="success"
+          sx={{
+            backgroundColor: colors.navy,
+            color: 'white',
+            '& .MuiAlert-icon': {
+              color: colors.azalea
+            }
+          }}
+        >
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </Container>
   );
 }

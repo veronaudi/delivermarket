@@ -10,7 +10,32 @@ import {
   Alert,
   CircularProgress
 } from '@mui/material';
+import { styled } from '@mui/material/styles';
 import authService from '../services/auth';
+
+// Цветовая палитра
+const colors = {
+  navy: '#214156',
+  palePink: '#FEE1E6',
+  azalea: '#FFC0A4',
+  skyBlue: '#CB9CE6',
+  beige: '#F5EEEB',
+};
+
+const StyledPaper = styled(Paper)({
+  borderRadius: '16px',
+  boxShadow: `0 8px 24px ${colors.navy}20`,
+});
+
+const StyledButton = styled(Button)({
+  backgroundColor: colors.navy,
+  color: 'white',
+  borderRadius: '30px',
+  padding: '12px',
+  '&:hover': {
+    backgroundColor: colors.skyBlue,
+  },
+});
 
 function RegisterPage() {
   const navigate = useNavigate();
@@ -33,17 +58,17 @@ function RegisterPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
+      setError('Пароли не совпадают');
       return;
     }
-    
+
     if (formData.password.length < 8) {
-      setError('Password must be at least 8 characters');
+      setError('Пароль должен быть не менее 8 символов');
       return;
     }
-    
+
     setLoading(true);
     setError('');
     setSuccess('');
@@ -54,22 +79,21 @@ function RegisterPage() {
         formData.password,
         formData.email
       );
-      
-      setSuccess(response.message || 'Registration successful!');
-      
-      // Автоматически логиним после регистрации
+
+      setSuccess(response.message || 'Регистрация успешна!');
+
+      // Перенаправляем на главную с полной перезагрузкой
       setTimeout(() => {
-        navigate('/');
-      }, 2000);
-      
+        window.location.href = '/';
+      }, 1500);
+
     } catch (err) {
       const errorData = err.response?.data;
       if (typeof errorData === 'object') {
-        // Обработка ошибок валидации Django
         const errors = Object.values(errorData).flat();
         setError(errors.join(', '));
       } else {
-        setError(errorData || 'Registration failed');
+        setError(errorData || 'Ошибка регистрации');
       }
     } finally {
       setLoading(false);
@@ -79,35 +103,65 @@ function RegisterPage() {
   return (
     <Container maxWidth="sm">
       <Box sx={{ mt: 8, mb: 4 }}>
-        <Typography variant="h4" align="center" gutterBottom>
-          Создание аккаунта
+        <Typography
+          variant="h3"
+          align="center"
+          gutterBottom
+          sx={{
+            color: colors.navy,
+            fontWeight: 700,
+            mb: 3
+          }}
+        >
+          Регистрация
         </Typography>
-        
-        <Paper elevation={3} sx={{ p: 4 }}>
+
+        <StyledPaper elevation={3} sx={{ p: 4 }}>
           {error && (
-            <Alert severity="error" sx={{ mb: 2 }}>
+            <Alert
+              severity="error"
+              sx={{
+                mb: 2,
+                borderRadius: '8px',
+                backgroundColor: colors.palePink,
+                color: colors.navy
+              }}
+            >
               {error}
             </Alert>
           )}
-          
+
           {success && (
-            <Alert severity="success" sx={{ mb: 2 }}>
+            <Alert
+              severity="success"
+              sx={{
+                mb: 2,
+                borderRadius: '8px',
+                backgroundColor: colors.azalea,
+                color: colors.navy
+              }}
+            >
               {success}
             </Alert>
           )}
-          
+
           <form onSubmit={handleSubmit}>
             <TextField
               fullWidth
-              label="Username"
+              label="Имя пользователя"
               name="username"
               value={formData.username}
               onChange={handleChange}
               margin="normal"
               required
               disabled={loading}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: '8px',
+                }
+              }}
             />
-            
+
             <TextField
               fullWidth
               label="Email"
@@ -117,11 +171,16 @@ function RegisterPage() {
               onChange={handleChange}
               margin="normal"
               disabled={loading}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: '8px',
+                }
+              }}
             />
-            
+
             <TextField
               fullWidth
-              label="Password"
+              label="Пароль"
               name="password"
               type="password"
               value={formData.password}
@@ -129,12 +188,17 @@ function RegisterPage() {
               margin="normal"
               required
               disabled={loading}
-              helperText="Minimum 8 characters"
+              helperText="Минимум 8 символов"
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: '8px',
+                }
+              }}
             />
-            
+
             <TextField
               fullWidth
-              label="Confirm Password"
+              label="Подтверждение пароля"
               name="confirmPassword"
               type="password"
               value={formData.confirmPassword}
@@ -142,9 +206,14 @@ function RegisterPage() {
               margin="normal"
               required
               disabled={loading}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: '8px',
+                }
+              }}
             />
-            
-            <Button
+
+            <StyledButton
               type="submit"
               fullWidth
               variant="contained"
@@ -152,17 +221,24 @@ function RegisterPage() {
               sx={{ mt: 3, mb: 2 }}
               disabled={loading}
             >
-              {loading ? <CircularProgress size={24} /> : 'Регистрация'}
-            </Button>
-            
-            <Typography align="center">
-              Уже заказывали у нас?{' '}
-              <Link to="/login" style={{ textDecoration: 'none' }}>
-                Лучше войдите в аккаунт
+              {loading ? <CircularProgress size={24} sx={{ color: 'white' }} /> : 'Зарегистрироваться'}
+            </StyledButton>
+
+            <Typography align="center" sx={{ color: colors.navy }}>
+              Уже есть аккаунт?{' '}
+              <Link
+                to="/login"
+                style={{
+                  color: colors.skyBlue,
+                  textDecoration: 'none',
+                  fontWeight: 600
+                }}
+              >
+                Войти
               </Link>
             </Typography>
           </form>
-        </Paper>
+        </StyledPaper>
       </Box>
     </Container>
   );

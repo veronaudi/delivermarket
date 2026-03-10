@@ -10,7 +10,32 @@ import {
   Alert,
   CircularProgress
 } from '@mui/material';
+import { styled } from '@mui/material/styles';
 import authService from '../services/auth';
+
+// Цветовая палитра
+const colors = {
+  navy: '#214156',
+  palePink: '#FEE1E6',
+  azalea: '#FFC0A4',
+  skyBlue: '#CB9CE6',
+  beige: '#F5EEEB',
+};
+
+const StyledPaper = styled(Paper)({
+  borderRadius: '16px',
+  boxShadow: `0 8px 24px ${colors.navy}20`,
+});
+
+const StyledButton = styled(Button)({
+  backgroundColor: colors.navy,
+  color: 'white',
+  borderRadius: '30px',
+  padding: '12px',
+  '&:hover': {
+    backgroundColor: colors.skyBlue,
+  },
+});
 
 function LoginPage() {
   const navigate = useNavigate();
@@ -35,9 +60,12 @@ function LoginPage() {
 
     try {
       await authService.login(formData.username, formData.password);
-      navigate('/');
+
+      // Полная перезагрузка страницы для обновления состояния приложения
+      window.location.href = '/';
+
     } catch (err) {
-      setError(err.response?.data?.error || 'Login failed');
+      setError(err.response?.data?.error || 'Ошибка входа');
     } finally {
       setLoading(false);
     }
@@ -46,32 +74,54 @@ function LoginPage() {
   return (
     <Container maxWidth="sm">
       <Box sx={{ mt: 8, mb: 4 }}>
-        <Typography variant="h4" align="center" gutterBottom>
+        <Typography
+          variant="h3"
+          align="center"
+          gutterBottom
+          sx={{
+            color: colors.navy,
+            fontWeight: 700,
+            mb: 3
+          }}
+        >
           Вход на сайт
         </Typography>
-        
-        <Paper elevation={3} sx={{ p: 4 }}>
+
+        <StyledPaper elevation={3} sx={{ p: 4 }}>
           {error && (
-            <Alert severity="error" sx={{ mb: 2 }}>
+            <Alert
+              severity="error"
+              sx={{
+                mb: 2,
+                borderRadius: '8px',
+                backgroundColor: colors.palePink,
+                color: colors.navy
+              }}
+            >
               {error}
             </Alert>
           )}
-          
+
           <form onSubmit={handleSubmit}>
             <TextField
               fullWidth
-              label="Username"
+              label="Имя пользователя"
               name="username"
               value={formData.username}
               onChange={handleChange}
               margin="normal"
               required
               disabled={loading}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: '8px',
+                }
+              }}
             />
-            
+
             <TextField
               fullWidth
-              label="Password"
+              label="Пароль"
               name="password"
               type="password"
               value={formData.password}
@@ -79,9 +129,14 @@ function LoginPage() {
               margin="normal"
               required
               disabled={loading}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: '8px',
+                }
+              }}
             />
-            
-            <Button
+
+            <StyledButton
               type="submit"
               fullWidth
               variant="contained"
@@ -89,17 +144,24 @@ function LoginPage() {
               sx={{ mt: 3, mb: 2 }}
               disabled={loading}
             >
-              {loading ? <CircularProgress size={24} /> : 'К заказу!'}
-            </Button>
-            
-            <Typography align="center">
-              Вы у нас в первый раз?{' '}
-              <Link to="/register" style={{ textDecoration: 'none' }}>
-                Зарегистрируйтесь!
+              {loading ? <CircularProgress size={24} sx={{ color: 'white' }} /> : 'Войти'}
+            </StyledButton>
+
+            <Typography align="center" sx={{ color: colors.navy }}>
+              Впервые у нас?{' '}
+              <Link
+                to="/register"
+                style={{
+                  color: colors.skyBlue,
+                  textDecoration: 'none',
+                  fontWeight: 600
+                }}
+              >
+                Создать аккаунт
               </Link>
             </Typography>
           </form>
-        </Paper>
+        </StyledPaper>
       </Box>
     </Container>
   );
