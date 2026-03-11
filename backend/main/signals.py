@@ -3,7 +3,7 @@ from django.dispatch import receiver
 from django.contrib.auth.models import User
 from django.db import transaction as db_transaction
 import random
-from .models import UserProfile, Inventory, Skin
+from .models import UserProfile, Inventory
 
 @receiver(post_save, sender=User)
 def create_user_profile(sender, instance, created, **kwargs):

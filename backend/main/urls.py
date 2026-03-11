@@ -8,7 +8,6 @@ router = DefaultRouter()
 router.register(r'skins', views.SkinViewSet)
 router.register(r'profile', views.UserProfileViewSet, basename='profile')
 router.register(r'inventory', views.InventoryViewSet, basename='inventory')
-router.register(r'transactions', views.TransactionViewSet, basename='transactions')
 router.register(r'marketplace', views.MarketplaceViewSet, basename='marketplace')
 
 urlpatterns = [
@@ -24,5 +23,4 @@ urlpatterns = [
     path('', include(router.urls)),
     
     path('marketplace/buy/<int:pk>/', views.MarketplaceViewSet.as_view({'post': 'buy'}), name='marketplace-buy'),
-    path('market/sell/<int:inventory_id>/', views.sell_skin, name='sell-skin'),
 ]
