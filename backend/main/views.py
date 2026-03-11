@@ -19,6 +19,13 @@ from .serializers import (
 )
 
 
+def health_check(request):
+    return JsonResponse({
+        "status": "healthy",
+        "service": "Food Delivery API"
+    })
+
+
 def index(request):
     return JsonResponse({
         "message": "Food Delivery API",
