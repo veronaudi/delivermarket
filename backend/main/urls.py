@@ -5,7 +5,6 @@ from rest_framework_simplejwt.views import TokenRefreshView
 from .views import FinanceViewSet
 
 router = DefaultRouter()
-router.register(r'skins', views.SkinViewSet)
 router.register(r'profile', views.UserProfileViewSet, basename='profile')
 router.register(r'inventory', views.InventoryViewSet, basename='inventory')
 router.register(r'marketplace', views.MarketplaceViewSet, basename='marketplace')
